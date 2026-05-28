@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🛡️ Smart WiFi Intruder Detection System
 
 Real-time WiFi intrusion detection and **actual blocking** system with a professional cybersecurity dashboard.
@@ -63,3 +64,7 @@ python run.py
 - `scanner.py`: Subnet-aware network discovery.
 - `database.py`: Thread-safe SQLite management with stable status logic.
 - `main.js`: UI logic with enhanced error handling and toast notifications.
+=======
+# sentinel-soc-platform
+AI-powered SOC &amp; NDR platform for real-time network traffic analysis, intrusion detection, threat intelligence, and active reconnaissance using modular microservices architecture.
+>>>>>>> 8ca4a6b4d1ff1f621a6f1c916e617be9bb8ad1f6
