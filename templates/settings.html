@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NetGuard IDS - Settings and System Configuration">
+    <title>⚙️ NetGuard IDS | Settings</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-page="settings">
+<div class="app-container">
+    <!-- Sidebar Panel -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🛡️</div>
+            <div>
+                <div class="sidebar-title">NetGuard IDS</div>
+                <div class="sidebar-subtitle">Intrusion Detection System</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item"><span class="icon">📊</span> Dashboard</a>
+            <a href="/devices-page" class="nav-item"><span class="icon">📡</span> Devices</a>
+            <a href="/threats-page" class="nav-item"><span class="icon">⚠️</span> Threats</a>
+            <a href="/?map=1" class="nav-item"><span class="icon">🗺️</span> Network Map</a>
+            <a href="/?traffic=1" class="nav-item"><span class="icon">📈</span> Traffic Analysis</a>
+            <a href="/threats-page" class="nav-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="#" class="nav-item" onclick="exportPDF(); return false;"><span class="icon">📄</span> Reports</a>
+            <a href="/settings-page" class="nav-item active"><span class="icon">⚙️</span> Settings</a>
+            
+            <!-- System Status Diagnostics Widget -->
+            <div class="sidebar-widget">
+                <div class="widget-title">System Status</div>
+                <div class="status-list">
+                    <div class="status-row">
+                        <span class="status-label">Engine</span>
+                        <span class="badge-status online">ONLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Database</span>
+                        <span class="badge-status online">ONLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Sensor</span>
+                        <span class="badge-status online">ACTIVE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Antigravity</span>
+                        <span id="sidebar-antigravity" class="badge-status online" style="color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,0.3)">ENABLED</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Uptime</span>
+                        <span class="status-val text-muted">7d 14h 22m</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Panel -->
+            <div class="sidebar-widget">
+                <div class="widget-title">Quick Actions</div>
+                <div class="action-list">
+                    <div class="action-row" onclick="triggerScan()">
+                        <span>🔍 Scan Network</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="const ip = prompt('Enter IP to block:'); if(ip) blockDevice(ip);">
+                        <span>🚫 Block IP</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="const ip = prompt('Enter IP exception:'); if(ip) unblockDevice(ip);">
+                        <span>🔓 Add Exception</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="exportPDF()">
+                        <span>📝 Generate Report</span>
+                        <span class="chevron">›</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            © 2025 NetGuard IDS<br>All rights reserved.
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Header HUD -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="live-monitoring-badge">
+                    <span class="live-dot animate-pulse"></span>
+                    System Settings & Diagnostics
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <div id="antigravity-indicator" class="antigravity-capsule" onclick="toggleAntigravity()">
+                    🛡️ Antigravity: <span id="antigravity-status">ENABLED</span> <span style="font-size: 10px;">›</span>
+                </div>
+                <div class="header-utilities">
+                    <button class="btn-utility" onclick="location.href='/settings-page'" title="Settings">⚙️</button>
+                    <div class="notification-wrapper" onclick="location.href='/threats-page'">
+                        <button class="btn-utility">🔔</button>
+                        <span class="notification-count">12</span>
+                    </div>
+                    <div class="profile-avatar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Cards Grid -->
+        <div class="grid-2" style="margin-bottom: 20px;">
+            <!-- System Info -->
+            <div class="card">
+                <div class="card-header"><div class="card-title">🖥️ System Information</div></div>
+                <div class="card-body" style="padding: 15px 20px;">
+                    <div class="settings-group">
+                        <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02)">
+                            <div><div class="setting-label" style="font-weight:600;">Scan Interval</div><div class="setting-desc" style="font-size:11px; color:var(--text-secondary)">Time between automatic network scans</div></div>
+                            <div class="setting-value" style="font-family:'Space Mono',monospace; color:var(--cyan)">10 seconds</div>
+                        </div>
+                        <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02)">
+                            <div><div class="setting-label" style="font-weight:600;">Detection Window</div><div class="setting-desc" style="font-size:11px; color:var(--text-secondary)">Time window for behavioral analysis</div></div>
+                            <div class="setting-value" style="font-family:'Space Mono',monospace; color:var(--cyan)">60 seconds</div>
+                        </div>
+                        <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02)">
+                            <div><div class="setting-label" style="font-weight:600;">Port Scan Threshold</div><div class="setting-desc" style="font-size:11px; color:var(--text-secondary)">Unique ports to trigger port scan alert</div></div>
+                            <div class="setting-value" style="font-family:'Space Mono',monospace; color:var(--cyan)">15 ports</div>
+                        </div>
+                        <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02)">
+                            <div><div class="setting-label" style="font-weight:600;">Flood Threshold</div><div class="setting-desc" style="font-size:11px; color:var(--text-secondary)">Packets per second to trigger flood alert</div></div>
+                            <div class="setting-value" style="font-family:'Space Mono',monospace; color:var(--cyan)">200 pps</div>
+                        </div>
+                        <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02)">
+                            <div><div class="setting-label" style="font-weight:600;">Auto-Block Level</div><div class="setting-desc" style="font-size:11px; color:var(--text-secondary)">Threat level that triggers automatic blocking</div></div>
+                            <div class="setting-value" style="font-family:'Space Mono',monospace; color:var(--red)">Critical</div>
+                        </div>
+                        <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0;">
+                            <div><div class="setting-label" style="font-weight:600;">Block Method</div><div class="setting-desc" style="font-size:11px; color:var(--text-secondary)">OS firewall engine used for blocking</div></div>
+                            <div class="setting-value" id="block-method" style="font-family:'Space Mono',monospace; color:var(--accent)">netsh / iptables</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trusted Devices -->
+            <div class="card">
+                <div class="card-header"><div class="card-title">✅ Trusted Devices Directory</div></div>
+                <div class="card-body" id="known-devices-list" style="max-height:360px; overflow-y:auto; padding: 15px 20px;">
+                    <div class="empty-state"><p>Loading trusted devices...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocked Devices -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="card-title">🚫 Currently Blocked Devices</div>
+                <button class="btn btn-sm btn-ghost" onclick="exportCSV('blocked')">📄 Export Blocklist</button>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>MAC Address</th>
+                            <th>Reason</th>
+                            <th>Blocked At</th>
+                            <th>Method</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blocked-tbody">
+                        <tr><td colspan="6" class="empty-state"><p>No blocked devices found.</p></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Logs -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="card-title">📜 Audit System Logs</div>
+                <button class="btn btn-sm btn-ghost" onclick="exportCSV('logs')">📄 Export Logs</button>
+            </div>
+            <div class="card-body" id="logs-container" style="max-height:400px; overflow-y:auto; padding: 15px;">
+                <div class="empty-state"><p>Loading system logs...</p></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/js/main.js"></script>
+<script src="/static/js/live.js"></script>
+<script>
+    async function loadKnownDevices() {
+        const data = await api('/known-devices');
+        const container = document.getElementById('known-devices-list');
+        if (!data.success || !data.devices.length) {
+            container.innerHTML = '<div class="empty-state"><p>No trusted devices. Mark devices as trusted from the Devices directory.</p></div>';
+            return;
+        }
+        container.innerHTML = data.devices.map(d => `
+            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.02)">
+                <div>
+                    <div class="setting-label" style="font-weight:600; color:var(--text-primary);">${d.name || 'Unknown'}</div>
+                    <div class="setting-desc" style="font-size:11px; color:var(--text-secondary); font-family:'Space Mono',monospace;">${d.mac} — ${d.device_type || 'personal'}</div>
+                </div>
+                <button class="table-btn-action danger" onclick="untrustDevice('${d.mac}')" title="Remove Trust">🌟</button>
+            </div>
+        `).join('');
+    }
+
+    async function loadBlockedDevices() {
+        const data = await api('/live-status');
+        const tbody = document.getElementById('blocked-tbody');
+        if (!data.success || !data.blocked_devices || !data.blocked_devices.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><p>No blocked devices found.</p></td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.blocked_devices.map(b => `<tr>
+            <td class="font-mono">${b.ip}</td>
+            <td class="font-mono">${b.mac || '—'}</td>
+            <td class="text-col">${b.reason}</td>
+            <td>${new Date(b.blocked_at).toLocaleString()}</td>
+            <td class="font-mono" style="color:var(--cyan)">${b.block_method}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="table-btn-action" onclick="unblockDevice('${b.ip}')" title="Unblock IP">🔓</button>
+                </div>
+            </td>
+        </tr>`).join('');
+    }
+
+    // Wrap refreshAll for settings specifics
+    const _origRefresh = refreshAll;
+    refreshAll = function() {
+        _origRefresh();
+        loadKnownDevices();
+        loadBlockedDevices();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => { 
+        loadKnownDevices(); 
+        loadBlockedDevices(); 
+    });
+
+    // Real-time ANTIGRAVITY status monitor
+    async function updateAntigravityStatus() {
+        try {
+            const res = await fetch('/antigravity/stats');
+            const data = await res.json();
+            const statusEl = document.getElementById('antigravity-status');
+            const indicatorEl = document.getElementById('antigravity-indicator');
+            const sidebarAntigravity = document.getElementById('sidebar-antigravity');
+            
+            if (data.enabled) {
+                if (statusEl) {
+                    statusEl.textContent = 'ENABLED';
+                    statusEl.style.color = '#00ff88';
+                }
+                if (indicatorEl) {
+                    indicatorEl.style.borderColor = 'rgba(0, 255, 136, 0.2)';
+                    indicatorEl.style.background = 'rgba(0, 255, 136, 0.05)';
+                }
+                if (sidebarAntigravity) {
+                    sidebarAntigravity.textContent = 'ENABLED';
+                    sidebarAntigravity.className = 'badge-status online';
+                    sidebarAntigravity.style.color = '#00ff88';
+                }
+            } else {
+                if (statusEl) {
+                    statusEl.textContent = 'DISABLED';
+                    statusEl.style.color = '#ef4444';
+                }
+                if (indicatorEl) {
+                    indicatorEl.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                    indicatorEl.style.background = 'rgba(239, 68, 68, 0.05)';
+                }
+                if (sidebarAntigravity) {
+                    sidebarAntigravity.textContent = 'DISABLED';
+                    sidebarAntigravity.className = 'badge-status offline';
+                    sidebarAntigravity.style.color = '#ef4444';
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch ANTIGRAVITY stats:', e);
+        }
+    }
+    
+    // Initial update and periodic interval
+    updateAntigravityStatus();
+    setInterval(updateAntigravityStatus, 5000);
+</script>
+</body>
+</html>

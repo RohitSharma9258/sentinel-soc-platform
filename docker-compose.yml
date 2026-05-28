@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  api_gateway:
+    build: ./services/api_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/soc
+
+  packet_analysis:
+    build: ./services/packet_analysis
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: soc
+    ports:
+      - "5432:5432"
+  soc_engine:
+    build: ./services/soc_engine
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0

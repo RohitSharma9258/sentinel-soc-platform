@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NetGuard IDS - Threat Detection and Real-time Incident Logs">
+    <title>⚠️ NetGuard IDS | Threat Monitor</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-page="threats">
+<div class="app-container">
+    <!-- Sidebar Panel -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🛡️</div>
+            <div>
+                <div class="sidebar-title">NetGuard IDS</div>
+                <div class="sidebar-subtitle">Intrusion Detection System</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item"><span class="icon">📊</span> Dashboard</a>
+            <a href="/devices-page" class="nav-item"><span class="icon">📡</span> Devices</a>
+            <a href="/threats-page" class="nav-item active"><span class="icon">⚠️</span> Threats</a>
+            <a href="/?map=1" class="nav-item"><span class="icon">🗺️</span> Network Map</a>
+            <a href="/?traffic=1" class="nav-item"><span class="icon">📈</span> Traffic Analysis</a>
+            <a href="/threats-page" class="nav-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="#" class="nav-item" onclick="exportPDF(); return false;"><span class="icon">📄</span> Reports</a>
+            <a href="/settings-page" class="nav-item"><span class="icon">⚙️</span> Settings</a>
+            
+            <!-- System Status Diagnostics Widget -->
+            <div class="sidebar-widget">
+                <div class="widget-title">System Status</div>
+                <div class="status-list">
+                    <div class="status-row">
+                        <span class="status-label">Engine</span>
+                        <span class="badge-status online">ONLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Database</span>
+                        <span class="badge-status online">ONLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Sensor</span>
+                        <span class="badge-status online">ACTIVE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Antigravity</span>
+                        <span id="sidebar-antigravity" class="badge-status online" style="color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,0.3)">ENABLED</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Uptime</span>
+                        <span class="status-val text-muted">7d 14h 22m</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Panel -->
+            <div class="sidebar-widget">
+                <div class="widget-title">Quick Actions</div>
+                <div class="action-list">
+                    <div class="action-row" onclick="triggerScan()">
+                        <span>🔍 Scan Network</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="const ip = prompt('Enter IP to block:'); if(ip) blockDevice(ip);">
+                        <span>🚫 Block IP</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="const ip = prompt('Enter IP exception:'); if(ip) unblockDevice(ip);">
+                        <span>🔓 Add Exception</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="exportPDF()">
+                        <span>📝 Generate Report</span>
+                        <span class="chevron">›</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            © 2025 NetGuard IDS<br>All rights reserved.
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Header HUD -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="live-monitoring-badge">
+                    <span class="live-dot animate-pulse"></span>
+                    Threat & Security Incident Center
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-ghost" onclick="exportCSV('threats')">📄 Export CSV</button>
+                <button class="btn btn-ghost" onclick="exportPDF()">📑 Report</button>
+                <div id="antigravity-indicator" class="antigravity-capsule" onclick="toggleAntigravity()">
+                    🛡️ Antigravity: <span id="antigravity-status">ENABLED</span> <span style="font-size: 10px;">›</span>
+                </div>
+                <div class="header-utilities">
+                    <button class="btn-utility" onclick="location.href='/settings-page'" title="Settings">⚙️</button>
+                    <div class="notification-wrapper" onclick="location.href='/threats-page'">
+                        <button class="btn-utility">🔔</button>
+                        <span class="notification-count">12</span>
+                    </div>
+                    <div class="profile-avatar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Threat Stats Ribbon -->
+        <div class="stats-grid" style="margin-bottom:20px; grid-template-columns: repeat(4, 1fr);">
+            <div class="stat-card danger">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper red">⚠️</span>
+                    <span class="trend-badge red">LIVE STATUS</span>
+                </div>
+                <div class="stat-value red" id="stat-threats">0</div>
+                <div class="stat-label">Active Threats</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper red">💀</span>
+                    <span class="trend-badge red">SEVERITY 5</span>
+                </div>
+                <div class="stat-value red" id="t-critical">0</div>
+                <div class="stat-label">Critical Threats</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper orange">🔶</span>
+                    <span class="trend-badge orange">SEVERITY 4</span>
+                </div>
+                <div class="stat-value orange" id="t-high">0</div>
+                <div class="stat-label">High-Risk Threats</div>
+            </div>
+            <div class="stat-card">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper purple">🟡</span>
+                    <span class="trend-badge purple">SEVERITY 3</span>
+                </div>
+                <div class="stat-value purple" id="t-medium">0</div>
+                <div class="stat-label">Medium-Risk Threats</div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filters-bar" style="margin-bottom:16px">
+            <button class="filter-btn active" onclick="loadThreats('all');this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">All Incidents</button>
+            <button class="filter-btn" onclick="loadThreats('critical');this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🔴 Critical</button>
+            <button class="filter-btn" onclick="loadThreats('high');this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🟠 High</button>
+            <button class="filter-btn" onclick="loadThreats('medium');this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🟡 Medium</button>
+            <button class="filter-btn" onclick="loadThreats('low');this.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🟢 Low</button>
+        </div>
+
+        <!-- Main Threats List Card -->
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>IP Address</th>
+                            <th>MAC Address</th>
+                            <th>Threat Type</th>
+                            <th>Level</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="threats-tbody">
+                        <tr><td colspan="8" class="empty-state"><p>Loading threats list...</p></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/js/main.js"></script>
+<script src="/static/js/live.js"></script>
+<script>
+    // Override stats update for threats page to load severity stats
+    const _origUpdate = updateStats;
+    updateStats = async function() {
+        await _origUpdate();
+        const data = await api('/live-status');
+        if (data.success && data.threat_summary) {
+            const s = data.threat_summary;
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            set('t-critical', s.critical || 0);
+            set('t-high', s.high || 0);
+            set('t-medium', s.medium || 0);
+        }
+    };
+
+    // Real-time ANTIGRAVITY status monitor
+    async function updateAntigravityStatus() {
+        try {
+            const res = await fetch('/antigravity/stats');
+            const data = await res.json();
+            const statusEl = document.getElementById('antigravity-status');
+            const indicatorEl = document.getElementById('antigravity-indicator');
+            const sidebarAntigravity = document.getElementById('sidebar-antigravity');
+            
+            if (data.enabled) {
+                if (statusEl) {
+                    statusEl.textContent = 'ENABLED';
+                    statusEl.style.color = '#00ff88';
+                }
+                if (indicatorEl) {
+                    indicatorEl.style.borderColor = 'rgba(0, 255, 136, 0.2)';
+                    indicatorEl.style.background = 'rgba(0, 255, 136, 0.05)';
+                }
+                if (sidebarAntigravity) {
+                    sidebarAntigravity.textContent = 'ENABLED';
+                    sidebarAntigravity.className = 'badge-status online';
+                    sidebarAntigravity.style.color = '#00ff88';
+                }
+            } else {
+                if (statusEl) {
+                    statusEl.textContent = 'DISABLED';
+                    statusEl.style.color = '#ef4444';
+                }
+                if (indicatorEl) {
+                    indicatorEl.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                    indicatorEl.style.background = 'rgba(239, 68, 68, 0.05)';
+                }
+                if (sidebarAntigravity) {
+                    sidebarAntigravity.textContent = 'DISABLED';
+                    sidebarAntigravity.className = 'badge-status offline';
+                    sidebarAntigravity.style.color = '#ef4444';
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch ANTIGRAVITY stats:', e);
+        }
+    }
+    
+    // Initial update and periodic interval
+    updateAntigravityStatus();
+    setInterval(updateAntigravityStatus, 5000);
+</script>
+</body>
+</html>

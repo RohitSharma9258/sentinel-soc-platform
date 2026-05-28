@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NetGuard NDR - Enterprise Network Detection and Response Platform">
+    <title>🛡️ NetGuard NDR | Security Operations Center</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-page="dashboard">
+<div class="app-container">
+    <!-- Sidebar Panel -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🛡️</div>
+            <div>
+                <div class="sidebar-title">NetGuard NDR</div>
+                <div class="sidebar-subtitle">Network Detection &amp; Response</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item active"><span class="icon">📊</span> Dashboard</a>
+            <a href="/devices-page" class="nav-item"><span class="icon">📡</span> Devices</a>
+            <a href="/threats-page" class="nav-item"><span class="icon">⚠️</span> Threats</a>
+            <a href="#" class="nav-item" onclick="resetGraphView(); return false;"><span class="icon">🗺️</span> Network Map</a>
+            <a href="#" class="nav-item" onclick="document.getElementById('traffic-chart-canvas').scrollIntoView({behavior: 'smooth'}); return false;"><span class="icon">📈</span> Traffic Analysis</a>
+            <a href="/threats-page" class="nav-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="#" class="nav-item" onclick="exportPDF(); return false;"><span class="icon">📄</span> Reports</a>
+            <a href="/settings-page" class="nav-item"><span class="icon">⚙️</span> Settings</a>
+            
+            <!-- System Status Diagnostics Widget -->
+            <div class="sidebar-widget">
+                <div class="widget-title">System Status</div>
+                <div class="status-list">
+                    <div class="status-row">
+                        <span class="status-label">Engine</span>
+                        <span class="badge-status online">ONLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Database</span>
+                        <span class="badge-status online">ONLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Sensor</span>
+                        <span class="badge-status online">ACTIVE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Antigravity</span>
+                        <span id="sidebar-antigravity" class="badge-status online" style="color: #00ff88; text-shadow: 0 0 8px rgba(0,255,136,0.3)">ENABLED</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">Uptime</span>
+                        <span class="status-val text-muted">7d 14h 22m</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Panel -->
+            <div class="sidebar-widget">
+                <div class="widget-title">Quick Actions</div>
+                <div class="action-list">
+                    <div class="action-row" onclick="triggerScan()">
+                        <span>🔍 Scan Network</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="const ip = prompt('Enter IP to block:'); if(ip) blockDevice(ip);">
+                        <span>🚫 Block IP</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="const ip = prompt('Enter IP exception:'); if(ip) unblockDevice(ip);">
+                        <span>🔓 Add Exception</span>
+                        <span class="chevron">›</span>
+                    </div>
+                    <div class="action-row" onclick="exportPDF()">
+                        <span>📝 Generate Report</span>
+                        <span class="chevron">›</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            © 2025 NetGuard IDS<br>All rights reserved.
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Header HUD -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="live-monitoring-badge">
+                    <span class="live-dot animate-pulse"></span>
+                    System Monitoring Active
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <div id="antigravity-indicator" class="antigravity-capsule" onclick="toggleAntigravity()">
+                    🛡️ Antigravity: <span id="antigravity-status">ENABLED</span> <span style="font-size: 10px;">›</span>
+                </div>
+                <button class="btn btn-primary scan-now-btn" id="scan-btn" onclick="triggerScan()">
+                    <span class="scan-radar-icon"></span> SCAN NOW
+                </button>
+                <div class="header-utilities">
+                    <button class="btn-utility" onclick="location.href='/settings-page'" title="Settings">⚙️</button>
+                    <div class="notification-wrapper" onclick="location.href='/threats-page'">
+                        <button class="btn-utility">🔔</button>
+                        <span class="notification-count">12</span>
+                    </div>
+                    <div class="profile-avatar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Cards Ribbon -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper cyan">📡</span>
+                    <span class="trend-badge green">▲ 12.4%</span>
+                </div>
+                <div class="stat-value cyan" id="stat-total">0</div>
+                <div class="stat-label">Total Devices</div>
+                <canvas id="sparkline-total" class="card-sparkline"></canvas>
+            </div>
+            <div class="stat-card">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper green">🟢</span>
+                    <span class="trend-badge green">▲ 8.7%</span>
+                </div>
+                <div class="stat-value green" id="stat-online">0</div>
+                <div class="stat-label">Online Devices</div>
+                <canvas id="sparkline-online" class="card-sparkline"></canvas>
+            </div>
+            <div class="stat-card danger">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper red">⚠️</span>
+                    <span class="trend-badge red">▲ 23.6%</span>
+                </div>
+                <div class="stat-value red" id="stat-threats">0</div>
+                <div class="stat-label">Active Threats</div>
+                <canvas id="sparkline-threats" class="card-sparkline"></canvas>
+            </div>
+            <div class="stat-card danger">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper red">🚫</span>
+                    <span class="trend-badge red">▲ 15.3%</span>
+                </div>
+                <div class="stat-value red" id="stat-blocked">0</div>
+                <div class="stat-label">Blocked Attempts</div>
+                <canvas id="sparkline-blocked" class="card-sparkline"></canvas>
+            </div>
+            <div class="stat-card">
+                <div class="card-header-mini">
+                    <span class="stat-icon-wrapper purple">📦</span>
+                    <span class="trend-badge purple">▲ 18.2%</span>
+                </div>
+                <div class="stat-value purple" id="stat-packets">0</div>
+                <div class="stat-label">Packets / Sec</div>
+                <canvas id="sparkline-pps-card" class="card-sparkline"></canvas>
+            </div>
+            <div class="stat-card health-card">
+                <div class="health-info">
+                    <div class="stat-value green" id="stat-health">98.6%</div>
+                    <div class="stat-label">System Health</div>
+                    <div class="health-status-desc text-muted">Excellent</div>
+                </div>
+                <div class="health-ring-container">
+                    <svg width="56" height="56" viewBox="0 0 56 56">
+                        <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3.5"/>
+                        <circle id="health-ring" cx="28" cy="28" r="24" fill="none" stroke="#00ff88" stroke-width="3.5" stroke-dasharray="150.7" stroke-dashoffset="2" stroke-linecap="round"/>
+                    </svg>
+                    <div class="health-ring-center">✔</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Hero Section: Network Topology & Activity timeline -->
+        <div class="grid-2" style="margin-bottom: 20px;">
+            <!-- Network Topology Graph -->
+            <div class="card" style="height: 480px; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        LIVE NETWORK TOPOLOGY
+                        <span class="live-indicator-pill">● LIVE</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-action-util" onclick="zoomInGraph()" title="Zoom In">🔍﹢</button>
+                        <button class="btn-action-util" onclick="zoomOutGraph()" title="Zoom Out">🔍﹣</button>
+                        <button class="btn-action-util" onclick="resetGraphView()" title="Reset View">🔄</button>
+                        <button class="btn-action-util" onclick="toggleFullscreen('network-graph-canvas')" title="Fullscreen">⛶</button>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:0; position:relative; overflow:hidden; flex:1; background: #04060a;">
+                    <canvas id="network-graph-canvas" style="width:100%; height:100%; display:block;"></canvas>
+                    <div id="graph-tooltip" style="position:absolute; display:none; background:rgba(6,8,13,0.95); border:1px solid var(--accent); padding:8px 12px; border-radius:6px; font-family:monospace; font-size:11px; color:#fff; pointer-events:none; z-index:10; box-shadow:0 0 10px rgba(0,255,136,0.2);"></div>
+                    <div class="graph-legend">
+                        <span><span class="legend-dot green"></span> Trusted</span>
+                        <span><span class="legend-dot cyan"></span> Online</span>
+                        <span><span class="legend-dot gray"></span> Offline</span>
+                        <span><span class="legend-dot red"></span> Threat</span>
+                        <span><span class="legend-dot orange"></span> Blocked</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Real-time Activity Timeline -->
+            <div class="card" style="height: 480px; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        SOC ACTIVITY TIMELINE
+                        <span class="live-indicator-pill">● LIVE</span>
+                    </div>
+                    <div class="card-actions">
+                        <select class="cyber-dropdown" onchange="filterLogs(this.value)">
+                            <option value="ALL">All Events</option>
+                            <option value="CRITICAL">Critical Only</option>
+                            <option value="WARNING">Warnings</option>
+                            <option value="INFO">Info</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body" id="logs-container" style="flex:1; overflow-y:auto; padding:15px; background: #04060a;">
+                    <div class="empty-state"><p>Loading logs...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lower Section: Traffic, Heatmap, Threat Intel & Targets -->
+        <div class="lower-layout-grid" style="margin-bottom: 20px;">
+            <!-- Traffic Analysis -->
+            <div class="card" style="height: 330px; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        TRAFFIC ANALYTICS
+                        <span class="live-indicator-pill">● LIVE</span>
+                    </div>
+                    <div class="card-actions">
+                        <div class="toggle-pills">
+                            <span class="pill active" onclick="setTrafficMode('bps')">bps</span>
+                            <span class="pill" onclick="setTrafficMode('pps')">pps</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:10px; position:relative; overflow:hidden; flex:1;">
+                    <canvas id="traffic-chart-canvas" style="width:100%; height:100%; display:block;"></canvas>
+                </div>
+            </div>
+            
+            <!-- Attack Heatmap (World Map) -->
+            <div class="card" style="height: 330px; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        ATTACK HEATMAP
+                        <span class="live-indicator-pill">● LIVE</span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:0; position:relative; overflow:hidden; flex:1;">
+                    <canvas id="world-heatmap-canvas" style="width:100%; height:100%; display:block;"></canvas>
+                    <div id="heatmap-tooltip" style="position:absolute; display:none; background:rgba(6,8,13,0.95); border:1px solid var(--cyan); padding:8px 12px; border-radius:6px; font-family:monospace; font-size:11px; color:#fff; pointer-events:none; z-index:10; box-shadow:0 0 10px rgba(0,212,255,0.2);"></div>
+                </div>
+            </div>
+
+            <!-- Threat Intelligence Donut -->
+            <div class="card" style="height: 330px; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        THREAT INTELLIGENCE
+                        <span class="live-indicator-pill">● LIVE</span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:10px; position:relative; overflow:hidden; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                    <div class="donut-wrapper" style="position:relative; width: 140px; height: 140px;">
+                        <canvas id="threat-donut-canvas" width="140" height="140" style="display:block;"></canvas>
+                        <div class="donut-center-text">
+                            <span class="donut-count" id="donut-threat-count">76</span>
+                            <span class="donut-label">Active Threats</span>
+                        </div>
+                    </div>
+                    <div class="donut-legend" id="donut-legend-container">
+                        <!-- Filled in via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Threat Targets -->
+            <div class="card" style="height: 330px; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        TOP THREAT TARGETS
+                        <span class="live-indicator-pill">● LIVE</span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:10px; position:relative; overflow:hidden; flex:1;">
+                    <div id="top-threat-targets-container" style="height:100%; overflow-y:auto; padding:5px 0;">
+                        <div class="empty-state"><p>Loading targets...</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Predictions Panel -->
+        <div class="card" id="ai-predictions-card" style="overflow:hidden; margin-bottom: 20px;">
+            <!-- Panel Header -->
+            <div class="card-header" style="border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:14px">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="card-title" style="margin:0">🤖 AI Risk Analysis</div>
+                    <span id="ai-live-badge" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,255,136,0.1);color:#00ff88;font-weight:700;letter-spacing:0.5px">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#00ff88;display:inline-block;animation:pulse 2s infinite"></span>LIVE
+                    </span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <span id="ai-mode-badge" style="font-size:11px;padding:3px 10px;border-radius:12px;background:rgba(139,92,246,0.15);color:#a78bfa;font-weight:600;letter-spacing:0.5px">Rules Only</span>
+                    <button class="btn btn-sm btn-ghost" onclick="loadAIPredictions()" id="ai-refresh-btn">↻ Refresh</button>
+                </div>
+            </div>
+
+            <!-- Summary Bar -->
+            <div id="ai-summary-bar" style="display:none;padding:12px 20px;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(255,255,255,0.05);gap:0">
+                <div style="display:flex;gap:0;width:100%">
+                    <div id="ai-sum-total" class="ai-sum-cell" style="border-right:1px solid rgba(255,255,255,0.06)"><span class="ai-sum-val" style="color:var(--cyan)">0</span><span class="ai-sum-lbl">Analyzed</span></div>
+                    <div id="ai-sum-crit" class="ai-sum-cell" style="border-right:1px solid rgba(255,255,255,0.06)"><span class="ai-sum-val" style="color:#ef4444">0</span><span class="ai-sum-lbl">Critical</span></div>
+                    <div id="ai-sum-high" class="ai-sum-cell" style="border-right:1px solid rgba(255,255,255,0.06)"><span class="ai-sum-val" style="color:#f97316">0</span><span class="ai-sum-lbl">High</span></div>
+                    <div id="ai-sum-medium" class="ai-sum-cell" style="border-right:1px solid rgba(255,255,255,0.06)"><span class="ai-sum-val" style="color:#eab308">0</span><span class="ai-sum-lbl">Medium</span></div>
+                    <div id="ai-sum-safe" class="ai-sum-cell"><span class="ai-sum-val" style="color:#22c55e">0</span><span class="ai-sum-lbl">Safe</span></div>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div id="ai-filter-tabs" style="display:none;padding:10px 20px;gap:6px;border-bottom:1px solid rgba(255,255,255,0.05)">
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <button class="ai-tab active" data-level="all" onclick="aiFilterTab(this,'all')">All</button>
+                    <button class="ai-tab" data-level="critical" onclick="aiFilterTab(this,'critical')">🔴 Critical</button>
+                    <button class="ai-tab" data-level="high" onclick="aiFilterTab(this,'high')">🟠 High</button>
+                    <button class="ai-tab" data-level="medium" onclick="aiFilterTab(this,'medium')">🟡 Medium</button>
+                    <button class="ai-tab" data-level="none" onclick="aiFilterTab(this,'none')">🟢 Safe</button>
+                </div>
+            </div>
+
+            <!-- Cards Grid -->
+            <div id="ai-predictions-container" style="padding:16px 20px">
+                <div class="empty-state"><div class="icon">🤖</div><p>Loading AI analysis...</p></div>
+            </div>
+        </div>
+
+        <!-- Subnet Coordinate Activity Heatmap -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <div class="card-title">🔥 Subnet Coordinate Activity Heatmap</div>
+                <div class="card-actions">
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(0,255,136,0.1);color:#00ff88;font-weight:700;letter-spacing:0.5px">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#00ff88;display:inline-block;animation:pulse 2s infinite"></span>LIVE
+                    </span>
+                </div>
+            </div>
+            <div class="card-body" style="padding:10px; position:relative; overflow:hidden;">
+                <canvas id="subnet-heatmap-canvas" style="width:100%; height:180px; background:#06080d; display:block;"></canvas>
+                <div id="heatmap-tooltip-subnet" style="position:absolute; display:none; background:rgba(6,8,13,0.95); border:1px solid var(--cyan); padding:8px 12px; border-radius:6px; font-family:monospace; font-size:11px; color:#fff; pointer-events:none; z-index:10; box-shadow:0 0 10px rgba(0,212,255,0.2);"></div>
+            </div>
+        </div>
+
+        <!-- THREAT INTEL CRITICAL BANNER (hidden by default, shown on IOC match) -->
+        <div id="threat-intel-banner" style="display:none; margin-bottom:16px; padding:14px 20px; border-radius:10px; background:rgba(239,68,68,0.12); border:1.5px solid rgba(239,68,68,0.5); animation: threat-pulse 2s infinite;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:22px;">🚨</span>
+                <div>
+                    <div style="color:#ef4444; font-weight:700; font-size:13px; letter-spacing:1px;">CRITICAL: THREAT INTELLIGENCE MATCH</div>
+                    <div id="threat-intel-banner-msg" style="color:#fca5a5; font-size:11px; margin-top:2px;">A device has communicated with a known malicious IP.</div>
+                </div>
+                <button onclick="document.getElementById('threat-intel-banner').style.display='none'" style="margin-left:auto; background:none; border:1px solid rgba(239,68,68,0.3); color:#ef4444; border-radius:6px; padding:4px 10px; cursor:pointer;">✕</button>
+            </div>
+        </div>
+
+        <!-- NDR Engine Status Ribbon -->
+        <div class="ndr-status-ribbon" id="ndr-status-ribbon">
+            <div class="ndr-module" id="ndr-mod-vendor"><span class="ndr-dot offline"></span> MAC Vendor</div>
+            <div class="ndr-module" id="ndr-mod-fp"><span class="ndr-dot offline"></span> Fingerprinter</div>
+            <div class="ndr-module" id="ndr-mod-arp"><span class="ndr-dot offline"></span> ARP Monitor</div>
+            <div class="ndr-module" id="ndr-mod-intel"><span class="ndr-dot offline"></span> Threat Intel</div>
+            <div class="ndr-module" id="ndr-mod-beacon"><span class="ndr-dot offline"></span> Beacon Detect</div>
+            <div class="ndr-intel-count" id="ndr-ioc-count">— IOCs</div>
+        </div>
+
+        <!-- Devices Table -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <div class="card-title">
+                    NETWORK DEVICES
+                    <span class="live-indicator-pill">● LIVE</span>
+                </div>
+                <div class="card-actions">
+                    <div class="filters-bar">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="online">Online</button>
+                        <button class="filter-btn" data-filter="unknown">Unknown</button>
+                        <button class="filter-btn" data-filter="threats">Threats</button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr>
+                        <th>IP Address</th><th>MAC Address</th><th>Hostname</th><th>Vendor</th>
+                        <th>OS / Type</th><th>Status</th><th>Threat Level</th><th>AI Risk</th><th>Last Seen</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody id="devices-tbody">
+                        <tr><td colspan="10" class="empty-state"><div class="icon">📡</div><p>Loading...</p></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/js/sparkline.js"></script>
+<script src="/static/js/worldmap.js"></script>
+<script src="/static/js/traffic.js"></script>
+<script src="/static/js/graph.js"></script>
+<script src="/static/js/heatmap.js"></script>
+<script src="/static/js/main.js"></script>
+<script src="/static/js/live.js"></script>
+<script>
+    // Initialize premium SOC visualization on load
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            if (typeof initNetworkGraph === 'function') initNetworkGraph();
+            if (typeof initSubnetHeatmap === 'function') initSubnetHeatmap();
+            if (typeof initAttackHeatmap === 'function') initAttackHeatmap();
+            if (typeof initTrafficChart === 'function') initTrafficChart();
+        }, 100);
+    });
+    // Real-time ANTIGRAVITY status monitor
+    async function updateAntigravityStatus() {
+        try {
+            const res = await fetch('/antigravity/stats');
+            const data = await res.json();
+            const statusEl = document.getElementById('antigravity-status');
+            const indicatorEl = document.getElementById('antigravity-indicator');
+            
+            if (data.enabled) {
+                statusEl.textContent = 'ENABLED';
+                statusEl.style.color = '#00ff88';
+                indicatorEl.style.borderColor = 'rgba(0, 255, 136, 0.2)';
+                indicatorEl.style.background = 'rgba(0, 255, 136, 0.05)';
+            } else {
+                statusEl.textContent = 'DISABLED';
+                statusEl.style.color = '#ef4444';
+                indicatorEl.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                indicatorEl.style.background = 'rgba(239, 68, 68, 0.05)';
+            }
+        } catch (e) {
+            console.error('Failed to fetch ANTIGRAVITY stats:', e);
+        }
+    }
+    
+    // Initial update and periodic interval
+    updateAntigravityStatus();
+    setInterval(updateAntigravityStatus, 5000);
+
+    // NDR Module Status Updater
+    async function updateNDRStatus() {
+        try {
+            const res = await fetch('/ndr/status');
+            if (!res.ok) return;
+            const data = await res.json();
+            if (!data.success) return;
+
+            const modules = data.modules || {};
+            const mapModule = {
+                'mac_vendor_engine':    'ndr-mod-vendor',
+                'device_fingerprinter': 'ndr-mod-fp',
+                'arp_monitor':          'ndr-mod-arp',
+                'threat_intel':         'ndr-mod-intel',
+                'beaconing_detector':   'ndr-mod-beacon',
+            };
+            for (const [key, elId] of Object.entries(mapModule)) {
+                const el = document.getElementById(elId);
+                if (!el) continue;
+                const dot = el.querySelector('.ndr-dot');
+                if (modules[key]) {
+                    if (dot) { dot.classList.remove('offline'); dot.classList.add('online'); }
+                } else {
+                    if (dot) { dot.classList.remove('online'); dot.classList.add('offline'); }
+                }
+            }
+
+            const iocEl = document.getElementById('ndr-ioc-count');
+            if (iocEl && data.threat_intel) {
+                iocEl.textContent = `${(data.threat_intel.total_iocs || 0).toLocaleString()} IOCs`;
+            }
+
+            // Show threat intel banner if beaconing IPs detected
+            if (data.beaconing_ips && data.beaconing_ips.length > 0) {
+                const banner = document.getElementById('threat-intel-banner');
+                const msg = document.getElementById('threat-intel-banner-msg');
+                if (banner) banner.style.display = 'block';
+                if (msg) msg.textContent = `Beaconing detected from: ${data.beaconing_ips.join(', ')}`;
+            }
+        } catch (e) { /* silent */ }
+    }
+    updateNDRStatus();
+    setInterval(updateNDRStatus, 15000);
+
+    // Listen for threat intel alerts via WebSocket
+    document.addEventListener('socket_connected', () => {
+        if (window._socket) {
+            window._socket.on('threat_intel_alert', (alert) => {
+                const banner = document.getElementById('threat-intel-banner');
+                const msg = document.getElementById('threat-intel-banner-msg');
+                if (banner) banner.style.display = 'block';
+                if (msg) msg.textContent = `IOC Match: ${alert.ip} → ${alert.dst_ip} (${alert.category})`;
+            });
+        }
+    });
+
+    function toggleFullscreen(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        if(!canvas) return;
+        if (!document.fullscreenElement) {
+            canvas.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+</script>
+</body>
+</html>

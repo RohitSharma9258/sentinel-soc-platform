@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+redis[asyncio]
+aioredis
+pydantic
+yara-python
+dnspython
+geoip2
+ja3
